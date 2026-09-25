@@ -87,7 +87,10 @@ class GeminiProvider(LLMProvider):
 
             except errors.ServerError as exc:
                 last_error = exc
-
+                print(
+                    f"Gemini ServerError on attempt {attempt + 1}: "
+                    f"{exc!r}"
+                )
                 if attempt >= self.MAX_RETRIES:
                     break
 
@@ -127,6 +130,11 @@ class GeminiProvider(LLMProvider):
                 raise RuntimeError(
                     "Unexpected error while calling Gemini."
                 ) from exc
+            
+        print(
+            "Gemini final error:",
+            repr(last_error)
+        )
 
         raise RuntimeError(
             "Gemini service remained unavailable "

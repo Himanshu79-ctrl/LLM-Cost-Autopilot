@@ -1,6 +1,6 @@
 from datetime import datetime
 import hashlib
-from sqlalchemy import DateTime, Float, Integer, JSON, String, Text
+from sqlalchemy import DateTime, Float,ForeignKey, Integer, JSON, String, Text
 from sqlalchemy.orm import Mapped, mapped_column
 
 from app.core.database import Base
@@ -14,6 +14,11 @@ class LLMRequest(Base):
         Integer,
         primary_key=True,
         autoincrement=True,
+    )
+    user_id: Mapped[int] = mapped_column(
+        ForeignKey("users.id"),
+        nullable=True,
+        index=True,
     )
 
     created_at: Mapped[datetime] = mapped_column(
@@ -88,9 +93,39 @@ class LLMRequest(Base):
         nullable=True,
     )
 
+    verification_status: Mapped[str] = mapped_column(
+        String(30),
+        default="pending",
+        nullable=False,
+    )
+
+    verification_model: Mapped[str | None] = mapped_column(
+        String(255),
+        nullable=True,
+    )
+
+    verification_reason: Mapped[str | None] = mapped_column(
+        Text,
+        nullable=True,
+    )
+
     escalated: Mapped[bool] = mapped_column(
         default=False,
         nullable=False,
+    )
+    escalated_model: Mapped[str | None] = mapped_column(
+        String(255),
+        nullable=True,
+    )
+    
+    escalation_cost_delta: Mapped[float | None] = mapped_column(
+        Float,
+        nullable=True,
+    )
+    
+    quality_gap: Mapped[float | None] = mapped_column(
+        Float,
+        nullable=True,
     )
 
     error_type: Mapped[str | None] = mapped_column(

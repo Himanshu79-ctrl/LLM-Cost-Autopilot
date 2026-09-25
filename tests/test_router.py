@@ -1,7 +1,7 @@
 import pytest
 
 from app.router.router import LLMRouter
-
+from app.router.model_registry import get_model
 
 @pytest.fixture
 def router():
@@ -50,3 +50,39 @@ def test_empty_prompt(router):
 
     with pytest.raises(ValueError):
         router.route("")
+
+
+def test_escalate_medium_to_powerful():
+
+    router = LLMRouter()
+
+    current_model = get_model(
+        "openai/gpt-oss-20b"
+    )
+
+    escalated_model = router.escalate(
+        current_model
+    )
+
+    assert escalated_model is not None
+
+    assert escalated_model.tier == "powerful"
+
+    assert (
+        escalated_model.name
+        == "gemini-3.6-flash"
+    )
+
+def test_no_escalation_from_powerful():
+
+    router = LLMRouter()
+
+    current_model = get_model(
+        "gemini-3.6-flash"
+    )
+
+    escalated_model = router.escalate(
+        current_model
+    )
+
+    assert escalated_model is None

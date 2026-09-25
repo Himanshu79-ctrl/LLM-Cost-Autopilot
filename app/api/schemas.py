@@ -23,6 +23,10 @@ class GenerateResponse(BaseModel):
     latency_ms: float
     cost: float
 
+    quality_score: float | None
+    quality_passed: bool | None
+    quality_reason: str
+
 
 class UsageSummaryResponse(BaseModel):
     total_requests: int

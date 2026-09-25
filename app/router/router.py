@@ -16,6 +16,11 @@ COMPLEXITY_TO_TIER = {
     "high": "powerful",
 }
 
+TIER_ESCALATION = {
+    "cheap": "medium",
+    "medium": "powerful",
+}
+
 
 @dataclass(frozen=True)
 class RoutingDecision:
@@ -71,3 +76,31 @@ class LLMRouter:
                 f"Selected {required_tier} tier model."
             ),
         )
+
+    def escalate(self, current_model: ModelInfo,) -> ModelInfo | None:
+
+        current_tier = current_model.tier
+
+        next_tier = TIER_ESCALATION.get(
+            current_tier
+        )
+
+        if next_tier is None:
+            return None
+
+        candidates = get_models_by_tier(
+            next_tier
+        )
+
+        if not candidates:
+            return None
+
+        selected_model = min(
+            candidates,
+            key=lambda model: (
+                model.input_cost_per_million
+                + model.output_cost_per_million
+            ),
+        )
+
+        return selected_model

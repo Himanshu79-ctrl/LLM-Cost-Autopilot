@@ -6,14 +6,18 @@ from app.services.request_logger import LLMRequest
 
 class AnalyticsService:
 
-    def __init__(self, db: Session):
+    def __init__(self, db: Session, user_id: int):
         self.db = db
+        self.user_id = user_id
 
     def get_summary(self) -> dict:
 
         total_requests = (
             self.db.query(
                 func.count(LLMRequest.id)
+            )
+            .filter(
+                LLMRequest.user_id == self.user_id
             )
             .scalar()
             or 0
@@ -28,6 +32,9 @@ class AnalyticsService:
                     0,
                 )
             )
+            .filter(
+                LLMRequest.user_id == self.user_id
+            )
             .scalar()
             or 0
         )
@@ -41,6 +48,9 @@ class AnalyticsService:
                     0,
                 )
             )
+            .filter(
+                LLMRequest.user_id == self.user_id
+            )
             .scalar()
             or 0
         )
@@ -52,6 +62,9 @@ class AnalyticsService:
                     0.0,
                 )
             )
+            .filter(
+                LLMRequest.user_id == self.user_id
+            )
             .scalar()
             or 0.0
         )
@@ -61,6 +74,9 @@ class AnalyticsService:
                 func.avg(
                     LLMRequest.latency_ms
                 )
+            )
+            .filter(
+                LLMRequest.user_id == self.user_id
             )
             .scalar()
             or 0.0
@@ -93,6 +109,9 @@ class AnalyticsService:
                 func.sum(
                     LLMRequest.output_tokens
                 ),
+            )
+            .filter(
+                LLMRequest.user_id == self.user_id
             )
             .group_by(
                 LLMRequest.selected_provider
@@ -129,6 +148,9 @@ class AnalyticsService:
                 func.count(LLMRequest.id),
                 func.sum(LLMRequest.cost),
             )
+            .filter(
+                LLMRequest.user_id == self.user_id
+            )
             .group_by(
                 LLMRequest.selected_model
             )
@@ -155,6 +177,9 @@ class AnalyticsService:
                 LLMRequest.complexity_level,
                 func.count(LLMRequest.id),
             )
+            .filter(
+                LLMRequest.user_id == self.user_id
+            )
             .group_by(
                 LLMRequest.complexity_level
             )
@@ -172,7 +197,6 @@ class AnalyticsService:
             ) in rows
         ]
 
-    
     def get_request_history(
         self,
         limit: int = 50,
@@ -180,6 +204,9 @@ class AnalyticsService:
 
         return (
             self.db.query(LLMRequest)
+            .filter(
+                LLMRequest.user_id == self.user_id
+            )
             .order_by(
                 LLMRequest.created_at.desc()
             )
