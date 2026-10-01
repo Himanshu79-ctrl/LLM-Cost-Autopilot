@@ -70,6 +70,7 @@ async def generate(
         )
 
         return GenerateResponse(
+            request_id=result.request_id,
             output=result.output,
 
             model=result.model,

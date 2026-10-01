@@ -4,14 +4,17 @@ const navigation = [
   {
     label: "Ask",
     path: "/dashboard",
+    icon: "✦",
   },
   {
     label: "Analytics",
     path: "/dashboard/analytics",
+    icon: "▥",
   },
   {
     label: "Requests",
     path: "/dashboard/requests",
+    icon: "◷",
   },
 ];
 
@@ -20,15 +23,17 @@ function DashboardRail() {
 
   return (
     <aside className="dashboard-rail">
-      <Link
-        to="/dashboard"
-        className="rail-logo"
-        aria-label="RouteMind dashboard"
-      >
-        <span className="rail-logo-mark" />
+      <Link to="/dashboard" className="rail-brand">
+        <span className="rail-brand-mark">
+          <span />
+        </span>
+
+        <span className="rail-brand-name">
+          RouteMind
+        </span>
       </Link>
 
-      <nav className="rail-navigation" aria-label="Dashboard navigation">
+      <nav className="rail-navigation">
         {navigation.map((item) => {
           const isActive =
             item.path === "/dashboard"
@@ -43,11 +48,26 @@ function DashboardRail() {
                 isActive ? "rail-item-active" : ""
               }`}
             >
-              {item.label}
+              <span className="rail-item-icon">
+                {item.icon}
+              </span>
+
+              <span>{item.label}</span>
             </Link>
           );
         })}
       </nav>
+
+      <div className="rail-status">
+        <div className="rail-status-row">
+          <span className="rail-status-dot" />
+          <span>System Online</span>
+        </div>
+
+        <span className="rail-status-text">
+          Ready to help
+        </span>
+      </div>
     </aside>
   );
 }

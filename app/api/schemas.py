@@ -9,6 +9,7 @@ class GenerateRequest(BaseModel):
 
 
 class GenerateResponse(BaseModel):
+    request_id: int
     output: str
 
     model: str
@@ -35,6 +36,7 @@ class UsageSummaryResponse(BaseModel):
     total_tokens: int
     total_cost: float
     average_latency_ms: float
+    average_quality_score: float
 
 
 class ProviderUsageResponse(BaseModel):
@@ -58,7 +60,7 @@ class ComplexityUsageResponse(BaseModel):
 class RequestHistoryResponse(BaseModel):
     id: int
     created_at: datetime
-
+    prompt_preview: str | None
     complexity_level: str
     complexity_score: int
 

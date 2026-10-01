@@ -9,6 +9,7 @@ class LLMResponse:
     model: str
     input_tokens: int
     output_tokens: int
+    thinking_tokens: int
     latency_ms: float
     cost: float
 

@@ -78,12 +78,14 @@ class OpenAIProvider(LLMProvider):
 
         input_tokens = usage.input_tokens if usage else 0
         output_tokens = usage.output_tokens if usage else 0
+        thinking_tokens=0
 
         return LLMResponse(
             output=response.output_text,
             model=selected_model,
             input_tokens=input_tokens,
             output_tokens=output_tokens,
+            thinking_tokens=0,
             latency_ms=latency_ms,
             cost=0.0,
         )

@@ -1,21 +1,26 @@
 import json
+
 from dataclasses import dataclass
 
 from app.providers.manager import ProviderManager
+from app.services.cost_engine import CostEngine
 
 
 @dataclass(frozen=True)
 class QualityResult:
     score: float
     passed: bool
-
     relevance: float
     correctness: float
     completeness: float
     instruction_following: float
     clarity: float
-
     reason: str
+
+    input_tokens: int
+    output_tokens: int
+    thinking_tokens: int
+    cost: float
 
 
 class QualityEvaluator:
@@ -42,8 +47,10 @@ class QualityEvaluator:
                 "Response cannot be empty."
             )
 
-        judge_provider = self.provider_manager.get_provider(
-            "groq"
+        judge_provider = (
+            self.provider_manager.get_provider(
+                "groq"
+            )
         )
 
         judge_prompt = self._build_judge_prompt(
@@ -51,13 +58,51 @@ class QualityEvaluator:
             response=response,
         )
 
+        # --------------------------------
+        # 1. Call judge model
+        # --------------------------------
         judge_response = await judge_provider.generate(
             prompt=judge_prompt,
             model=self.JUDGE_MODEL,
         )
 
-        return self._parse_result(
+        # --------------------------------
+        # 2. Calculate judge cost
+        # --------------------------------
+        judge_cost = CostEngine.calculate(
+            model_name=judge_response.model,
+            input_tokens=judge_response.input_tokens,
+            output_tokens=judge_response.output_tokens,
+            thinking_tokens=judge_response.thinking_tokens,
+        )
+
+        # --------------------------------
+        # 3. Parse judge JSON
+        # --------------------------------
+        parsed = self._parse_result(
             judge_response.output
+        )
+
+        # --------------------------------
+        # 4. Return quality + usage data
+        # --------------------------------
+        return QualityResult(
+            score=parsed.score,
+            passed=parsed.passed,
+            relevance=parsed.relevance,
+            correctness=parsed.correctness,
+            completeness=parsed.completeness,
+            instruction_following=(
+                parsed.instruction_following
+            ),
+            clarity=parsed.clarity,
+            reason=parsed.reason,
+            input_tokens=judge_response.input_tokens,
+            output_tokens=judge_response.output_tokens,
+            thinking_tokens=(
+                judge_response.thinking_tokens
+            ),
+            cost=judge_cost.total_cost,
         )
 
     @staticmethod
@@ -74,18 +119,23 @@ Evaluate the generated response against the user's original prompt.
 Evaluate these five dimensions:
 
 1. relevance
+
    Does the response directly address the user's request?
 
 2. correctness
+
    Is the response technically and factually reasonable?
 
 3. completeness
+
    Does it cover the important parts required by the prompt?
 
 4. instruction_following
+
    Does it follow explicit instructions and constraints?
 
 5. clarity
+
    Is the response clear, understandable, and well structured?
 
 Give each dimension a score from 0 to 10.
@@ -95,7 +145,9 @@ Then calculate an overall score from 0 to 10.
 A response passes if the overall score is 7.0 or higher.
 
 Return ONLY valid JSON.
+
 Do not use markdown.
+
 Do not include additional text.
 
 Required JSON format:
@@ -112,10 +164,13 @@ Required JSON format:
 }}
 
 USER PROMPT:
+
 {prompt}
 
 GENERATED RESPONSE:
+
 {response}
+
 """.strip()
 
     @staticmethod
@@ -125,6 +180,7 @@ GENERATED RESPONSE:
 
         try:
             data = json.loads(raw_output)
+
         except json.JSONDecodeError as exc:
             raise RuntimeError(
                 "LLM judge returned invalid JSON."
@@ -158,7 +214,9 @@ GENERATED RESPONSE:
                 "LLM judge returned an invalid score."
             )
 
-        passed = score >= QualityEvaluator.PASS_THRESHOLD
+        passed = (
+            score >= QualityEvaluator.PASS_THRESHOLD
+        )
 
         return QualityResult(
             score=score,
@@ -171,4 +229,8 @@ GENERATED RESPONSE:
             ),
             clarity=float(data["clarity"]),
             reason=str(data["reason"]),
+            input_tokens=0,
+            output_tokens=0,
+            thinking_tokens=0,
+            cost=0.0,
         )

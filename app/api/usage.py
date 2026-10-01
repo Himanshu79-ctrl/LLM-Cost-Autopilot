@@ -1,4 +1,4 @@
-from fastapi import APIRouter, Depends
+from fastapi import APIRouter, Depends, Query
 from sqlalchemy.orm import Session
 
 from app.api.schemas import (
@@ -90,6 +90,11 @@ async def complexity_usage(
     response_model=list[RequestHistoryResponse],
 )
 async def request_history(
+    limit: int = Query(
+        default=50,
+        ge=1,
+        le=100,
+    ),
     db: Session = Depends(get_db),
     current_user: User = Depends(get_current_user),
 ):
@@ -98,4 +103,4 @@ async def request_history(
         current_user.id,
     )
 
-    return service.get_request_history()
+    return service.get_request_history(limit=limit)

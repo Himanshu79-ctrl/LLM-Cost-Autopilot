@@ -2,7 +2,6 @@ import { useState } from "react";
 import { Link, useNavigate } from "react-router-dom";
 
 import AuthForm from "../../components/auth/AuthForm";
-import { loginUser} from "../../services/authService";
 import { useAuth } from "../../context/AuthContext";
 
 function LoginPage() {
@@ -27,26 +26,24 @@ function LoginPage() {
   }
 
   async function handleSubmit(event) {
-    event.preventDefault();
+  event.preventDefault();
 
-    setError("");
-    setLoading(true);
+  setError("");
+  setLoading(true);
 
-    try {
-      const data = await loginUser({
-        email: formData.email,
-        password: formData.password,
-      });
+  try {
+    await login({
+      email: formData.email,
+      password: formData.password,
+    });
 
-      await login(data.access_token);
-
-      navigate("/dashboard");
-    } catch (error) {
-      setError(error.message);
-    } finally {
-      setLoading(false);
-    }
+    navigate("/dashboard");
+  } catch (error) {
+    setError(error.message);
+  } finally {
+    setLoading(false);
   }
+}
 
   return (
     <main className="auth-page">

@@ -32,6 +32,10 @@ class LLMRequest(Base):
         nullable=False,
         index=True,
     )
+    prompt_preview: Mapped[str] = mapped_column(
+        String(200),
+        nullable=False,
+    )
 
     complexity_level: Mapped[str] = mapped_column(
         String(20),
@@ -77,10 +81,32 @@ class LLMRequest(Base):
         Integer,
         nullable=False,
     )
+    thinking_tokens: Mapped[int] = mapped_column(
+        Integer,
+        nullable=False,
+        default=0,
+    )
 
     latency_ms: Mapped[float] = mapped_column(
         Float,
         nullable=False,
+    )
+    generation_cost: Mapped[float] = mapped_column(
+        Float,
+        nullable=False,
+        default=0.0,
+    )
+
+    verification_cost: Mapped[float] = mapped_column(
+        Float,
+        nullable=False,
+        default=0.0,
+    )
+
+    escalation_cost: Mapped[float] = mapped_column(
+        Float,
+        nullable=False,
+        default=0.0,
     )
 
     cost: Mapped[float] = mapped_column(

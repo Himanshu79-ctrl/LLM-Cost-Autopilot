@@ -10,13 +10,9 @@ from app.providers.manager import ProviderManager
 class VerificationService:
 
     def __init__(self, db: Session):
-
         self.db = db
-
         self.quality_evaluator = QualityEvaluator()
-
         self.router = LLMRouter()
-
         self.provider_manager = ProviderManager()
 
     async def verify(
@@ -37,48 +33,40 @@ class VerificationService:
             )
 
         try:
-
             # --------------------------------
             # 1. Verify original response
             # --------------------------------
-
             quality = await self.quality_evaluator.evaluate(
                 prompt=prompt,
                 response=response,
             )
+
+            # Judge cost is part of the total request cost.
+            record.verification_cost += quality.cost
+            record.cost += quality.cost
 
             record.verification_model = (
                 QualityEvaluator.JUDGE_MODEL
             )
 
             record.quality_score = quality.score
-
-            record.verification_reason = (
-                quality.reason
-            )
+            record.verification_reason = quality.reason
 
             # --------------------------------
             # 2. Response passed
             # --------------------------------
-
             if quality.passed:
-
                 record.verification_status = "passed"
-
                 self.db.commit()
-
                 return
 
             # --------------------------------
             # 3. Response failed
             # --------------------------------
-
             record.verification_status = "failed"
 
-            current_model = (
-                self._get_current_model(
-                    record.selected_model
-                )
+            current_model = self._get_current_model(
+                record.selected_model
             )
 
             escalated_model = self.router.escalate(
@@ -86,50 +74,50 @@ class VerificationService:
             )
 
             # No stronger model available
-
             if escalated_model is None:
-
                 self.db.commit()
-
                 return
 
             # --------------------------------
             # 4. Generate with stronger model
             # --------------------------------
-
-            provider = (
-                self.provider_manager.get_provider(
-                    escalated_model.provider
-                )
+            provider = self.provider_manager.get_provider(
+                escalated_model.provider
             )
 
-            escalated_response = (
-                await provider.generate(
-                    prompt=prompt,
-                    model=escalated_model.name,
-                )
+            escalated_response = await provider.generate(
+                prompt=prompt,
+                model=escalated_model.name,
             )
 
             # --------------------------------
             # 5. Calculate escalation cost
             # --------------------------------
-
             original_cost = CostEngine.calculate(
                 model_name=record.selected_model,
                 input_tokens=record.input_tokens,
                 output_tokens=record.output_tokens,
+                thinking_tokens=record.thinking_tokens,
             )
 
             escalated_cost = CostEngine.calculate(
                 model_name=escalated_response.model,
-                input_tokens=(
-                    escalated_response.input_tokens
-                ),
-                output_tokens=(
-                    escalated_response.output_tokens
-                ),
+                input_tokens=escalated_response.input_tokens,
+                output_tokens=escalated_response.output_tokens,
+                thinking_tokens=escalated_response.thinking_tokens,
             )
 
+            # Actual escalation model cost.
+            record.escalation_cost += (
+                escalated_cost.total_cost
+            )
+
+            record.cost += (
+                escalated_cost.total_cost
+            )
+
+            # Difference between original and escalated
+            # model generation costs.
             cost_delta = (
                 escalated_cost.total_cost
                 - original_cost.total_cost
@@ -138,7 +126,6 @@ class VerificationService:
             # --------------------------------
             # 6. Verify escalated response
             # --------------------------------
-
             escalated_quality = (
                 await self.quality_evaluator.evaluate(
                     prompt=prompt,
@@ -146,10 +133,19 @@ class VerificationService:
                 )
             )
 
+            # Second judge cost is also part of
+            # total request cost.
+            record.verification_cost += (
+                escalated_quality.cost
+            )
+
+            record.cost += (
+                escalated_quality.cost
+            )
+
             # --------------------------------
             # 7. Save escalation information
             # --------------------------------
-
             record.escalated = True
 
             record.escalated_model = (
@@ -164,6 +160,7 @@ class VerificationService:
                 escalated_quality.score
                 - quality.score
             )
+
             record.quality_score = (
                 escalated_quality.score
             )
@@ -192,7 +189,6 @@ class VerificationService:
             self.db.commit()
 
         except Exception as exc:
-
             self.db.rollback()
 
             record = self.db.get(
@@ -201,16 +197,13 @@ class VerificationService:
             )
 
             if record is not None:
-
                 record.verification_status = "error"
 
                 record.verification_model = (
                     QualityEvaluator.JUDGE_MODEL
                 )
 
-                record.verification_reason = str(
-                    exc
-                )
+                record.verification_reason = str(exc)
 
                 self.db.commit()
 
@@ -218,7 +211,6 @@ class VerificationService:
         self,
         model_name: str,
     ):
-
         from app.router.model_registry import get_model
 
         return get_model(model_name)

@@ -81,6 +81,17 @@ class AnalyticsService:
             .scalar()
             or 0.0
         )
+        average_quality = (
+            self.db.query(
+                func.avg(LLMRequest.quality_score)
+            )
+            .filter(
+                LLMRequest.user_id == self.user_id,
+                LLMRequest.quality_score.isnot(None),
+            )
+            .scalar()
+            or 0.0
+        )
 
         return {
             "total_requests": total_requests,
@@ -94,6 +105,7 @@ class AnalyticsService:
             "average_latency_ms": float(
                 average_latency
             ),
+            "average_quality_score": float(average_quality),
         }
 
     def get_provider_usage(self) -> list[dict]:
