@@ -8,7 +8,8 @@ class CostBreakdown:
     model: str
     input_tokens: int
     output_tokens: int
-
+    thinking_tokens: int
+    billable_output_tokens: int
     input_cost: float
     output_cost: float
     total_cost: float
@@ -21,6 +22,7 @@ class CostEngine:
         model_name: str,
         input_tokens: int,
         output_tokens: int,
+        thinking_tokens: int = 0,
     ) -> CostBreakdown:
         """
         Calculate the estimated cost of an LLM request.
@@ -35,9 +37,11 @@ class CostEngine:
             raise ValueError(
                 "Output tokens cannot be negative."
             )
+        if thinking_tokens < 0:
+            raise ValueError("Thinking tokens cannot be negative.")
 
         model = get_model(model_name)
-
+        billable_output_tokens = output_tokens + thinking_tokens
         input_cost = (
             input_tokens
             / 1_000_000
@@ -58,5 +62,7 @@ class CostEngine:
             output_tokens=output_tokens,
             input_cost=input_cost,
             output_cost=output_cost,
+            thinking_tokens=thinking_tokens,
+            billable_output_tokens=billable_output_tokens,
             total_cost=total_cost,
         )
