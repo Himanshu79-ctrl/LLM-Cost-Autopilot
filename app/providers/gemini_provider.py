@@ -60,12 +60,18 @@ class GeminiProvider(LLMProvider):
             if usage
             else 0
         )
+        thinking_tokens = (
+            usage.thoughts_token_count
+            if usage and usage.thoughts_token_count
+            else 0
+        )
 
         return LLMResponse(
             output=response.text or "",
             model=selected_model,
             input_tokens=input_tokens,
             output_tokens=output_tokens,
+            thinking_tokens=thinking_tokens,
             latency_ms=latency_ms,
             cost=0.0,
         )
