@@ -1,19 +1,34 @@
+import { useState } from "react";
+
 import DashboardHeader from "../../components/dashboard/DashboardHeader";
 import AskRouteMind from "../../components/dashboard/AskRouteMind";
-import RoutingOverview from "../../components/dashboard/RoutingOverview";
+import CurrentRequest from "../../components/dashboard/CurrentRequest";
+import QuickStats from "../../components/dashboard/QuickStats";
 import RecentRequests from "../../components/dashboard/RecentRequests";
 
 function DashboardPage() {
+  const [latestResponse, setLatestResponse] = useState(null);
+
   return (
     <>
       <DashboardHeader />
 
       <div className="dashboard-content">
-        <AskRouteMind />
+        <div className="dashboard-layout">
+          <main className="dashboard-main-column">
+            <AskRouteMind onResponse={setLatestResponse} />
+          </main>
 
-        <RoutingOverview />
+          <aside className="dashboard-right-column">
+            <CurrentRequest response={latestResponse} />
 
-        <RecentRequests />
+            <QuickStats />
+
+            <RecentRequests
+                currentRequestId={latestResponse?.request_id}
+            />
+          </aside>
+        </div>
       </div>
     </>
   );
