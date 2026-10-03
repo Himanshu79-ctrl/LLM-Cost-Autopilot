@@ -79,10 +79,11 @@ a {
 }
 
 .brand-mark {
-  width: 9px;
-  height: 9px;
-  background: var(--amber);
-  box-shadow: 0 0 16px rgba(245, 166, 35, 0.25);
+  width: 40px;
+  height: 40px;
+  object-fit: contain;
+  display: block;
+  flex-shrink: 0;
 }
 
 .brand-name {
